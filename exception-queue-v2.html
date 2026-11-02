@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Exception queue: reconciliation prototype</title>
+<style>
+:root{--bg:#f3f5f7;--surface:#fff;--ink:#14202e;--muted:#5b6978;--line:#d9dfe6;--ok:#1d7a4d;--okbg:#e3f3ea;--warn:#a35a00;--warnbg:#fdf0da;--bad:#b3261e;--badbg:#fbe4e2;--accent:#1f4e79;--accbg:#e2edf8;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1720;--surface:#17212c;--ink:#e8edf2;--muted:#9aa8b6;--line:#2a3745;--ok:#5fd09a;--okbg:#14301f;--warn:#f0b35a;--warnbg:#33260f;--bad:#f2817a;--badbg:#3a1a18;--accent:#7fb2e5;--accbg:#1b2c3f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1720;--surface:#17212c;--ink:#e8edf2;--muted:#9aa8b6;--line:#2a3745;--ok:#5fd09a;--okbg:#14301f;--warn:#f0b35a;--warnbg:#33260f;--bad:#f2817a;--badbg:#3a1a18;--accent:#7fb2e5;--accbg:#1b2c3f;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:28px 18px 60px}
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+h1{font:600 30px/1.2 "Iowan Old Style",Georgia,serif;margin:0 0 6px}
+h2{font:600 18px/1.3 "Iowan Old Style",Georgia,serif;margin:28px 0 8px}
+.sub{color:var(--muted);margin:0 0 20px;max-width:64ch}
+.tag{display:inline-block;border:1px solid var(--line);border-radius:4px;padding:2px 8px;font-size:12px;color:var(--muted);margin-bottom:12px}
+.reset{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:6px;background:var(--surface);margin-bottom:14px}
+.stat{padding:12px 14px;border-right:1px solid var(--line)}.stat:last-child{border-right:0}
+.stat b{display:block;font:600 24px/1.2 "Iowan Old Style",Georgia,serif;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin:0 0 20px}
+.bar i{display:block;height:100%;background:var(--ok)}
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.tabs button{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 12px;border-radius:6px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.card{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:6px;padding:14px 16px;margin-bottom:12px}
+.card.human{border-left-color:var(--bad)}.card.clear{border-left-color:var(--ok)}.card.sug{border-left-color:var(--accent)}
+.card.done{opacity:.62}
+.top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.top strong{font-size:16px}
+.amt{font-variant-numeric:tabular-nums;font-weight:600}
+.kind{font-size:12px;border-radius:4px;padding:2px 8px;background:var(--warnbg);color:var(--warn);margin-left:8px;white-space:nowrap}
+.human .kind{background:var(--badbg);color:var(--bad)}.clear .kind{background:var(--okbg);color:var(--ok)}.sug .kind{background:var(--accbg);color:var(--accent)}
+.meta{color:var(--muted);font-size:13px;margin:2px 0 6px}
+.ev{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.ev span{font-size:12px;border:1px solid var(--line);border-radius:4px;padding:2px 8px;color:var(--muted)}
+.ev .y{color:var(--ok)}.ev .n{color:var(--bad)}
+.why{margin:6px 0}
+.act{background:var(--bg);border-radius:4px;padding:8px 10px;margin:8px 0;font-size:14px}
+.post{font-size:13px;color:var(--warn);margin:6px 0}
+.conf{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.conf i{display:block;width:110px;height:6px;border-radius:3px;background:var(--line);position:relative;overflow:hidden}
+.conf i u{position:absolute;inset:0 auto 0 0;background:var(--accent)}
+.btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.btns button{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 12px;border-radius:6px;cursor:pointer}
+.btns .p{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.status{font-size:13px;color:var(--ok);margin-top:8px}
+.log{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 14px;font-size:13px;color:var(--muted)}
+.log div{padding:4px 0;border-bottom:1px solid var(--line)}.log div:last-child{border-bottom:0}
+.foot{margin-top:28px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:14px}
+.foot b{color:var(--ink)}
+@media (max-width:560px){.stats{grid-template-columns:repeat(2,1fr)}.stat:nth-child(2){border-right:0}.stat:nth-child(-n+2){border-bottom:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="head"><div><span class="tag">Prototype with fake data. Not production software.</span>
+<h1>Exception queue</h1></div><button class="reset" onclick="reset()">Reset demo</button></div>
+<p class="sub">An agent matches bank transactions to invoices. Exact matches clear on their own. Suggestions, and anything that posts to the ledger, wait for a person, with the evidence shown rather than just a score.</p>
+<div class="stats" id="stats"></div>
+<div class="bar" id="bar"></div>
+<div class="tabs" id="tabs"></div>
+<div id="list"></div>
+<h2>Audit log</h2>
+<div class="log" id="log"></div>
+<div class="foot"><b>With another week I would:</b> connect real bank and ERP feeds, learn from each confirm or escalate click so a kind of suggestion can graduate to exact once it has earned trust, and store every decision with its evidence so an auditor can replay it.</div>
+</div>
+<script>
+const INV=[
+["INV-1001","Alder Logistics",4200],["INV-1002","Birch Health",12500],["INV-1003","Cedar Foods",860],
+["INV-1004","Dune Media",3150],["INV-1005","Elm Robotics",9800],["INV-1006","Fir Capital",2400],
+["INV-1007","Gale Energy",15000],["INV-1008","Holm Retail",1275],["INV-1009","Iris Labs",6400],
+["INV-1010","Juniper Law",3900],["INV-1011","Kite Travel",5250],["INV-1012","Lark Education",2050]
+].map(([id,cust,amt])=>({id,cust,amt}));
+const TX=[
+["T-01","Alder Logistics",4200,"Payment INV-1001"],["T-02","Birch Health",12500,"INV-1002"],
+["T-03","Cedar Foods",848,"INV-1003"],["T-04","Dune Media",3150,"INV-1004"],
+["T-05","Dune Media",3150,"INV-1004"],["T-06","Elm Robotics",9800,"INV-1005 Oct"],
+["T-07","Fir Capital",2448,"INV-1006"],["T-08","Gale Energy",15000,"INV-1007"],
+["T-09","Holm Retail",1275,"INV-1008"],["T-10","Iris Labs",3200,"INV-1009 partial"],
+["T-11","Northwind Trading LLC",7300,"Wire ref 88213"],["T-12","Juniper Law",3900,"invoice 1010"],
+["T-13","Kite Travel",5250,"Kite Travl"]
+].map(([id,payer,amt,memo])=>({id,payer,amt,memo}));
+const $=n=>n.toLocaleString("en-US",{style:"currency",currency:"USD"});
+const same=(a,b)=>a.toLowerCase().slice(0,4)===b.toLowerCase().slice(0,4);
+const seen=new Set();
+const R=TX.map(t=>{
+  const m=t.memo.match(/(?:INV-?|invoice\s*)(\d{4})/i);
+  const byRef=m?INV.find(i=>i.id==="INV-"+m[1])||null:null;
+  const inv=byRef||INV.find(i=>same(i.cust,t.payer))||null;
+  const dup=!!inv&&seen.has(inv.id);
+  const d=inv?Math.round((t.amt-inv.amt)*100)/100:null;
+  const ev=[["Invoice reference in memo",!!byRef],["Payer matches customer",!!inv&&same(inv.cust,t.payer)],["Amount equals invoice",d===0],["Invoice not already paid",inv?!dup:null]];
+  const r={t,inv,ev,post:false,kind:"",why:"",act:"",conf:0,type:"exc"};
+  if(!inv){Object.assign(r,{kind:"No matching invoice",conf:22,type:"human",why:`No invoice reference, and no customer named “${t.payer}” in the open invoices. The amount ${$(t.amt)} matches nothing.`,act:"Escalate to AR. Ask the bank for the originator details before booking this as revenue."});return r}
+  if(dup){Object.assign(r,{kind:"Duplicate payment",conf:96,post:true,why:`${inv.id} was already paid in full by an earlier transaction. This second ${$(t.amt)} payment has the same payer and amount.`,act:`Hold the funds and issue a ${$(t.amt)} refund to ${inv.cust}.`});return r}
+  seen.add(inv.id);
+  if(d===0&&byRef){Object.assign(r,{kind:"Exact match",type:"clear",conf:98,why:`Invoice reference, payer and amount all agree with ${inv.id}.`,act:"Cleared automatically."});return r}
+  if(d===0){Object.assign(r,{kind:"Suggested match",type:"sug",conf:91,why:`The memo has no invoice reference, but the payer and the exact amount fit ${inv.id}, and no other open invoice fits. It looks right, but a missing reference makes it a suggestion.`,act:`Confirm the match to clear ${inv.id}.`});return r}
+  if(d<0&&Math.abs(d)<=25){Object.assign(r,{kind:"Short payment",conf:78,post:true,why:`Paid ${$(t.amt)} against ${$(inv.amt)}, short by ${$(-d)}. Gaps this size usually come from a bank or wire fee.`,act:`Apply the payment and write off ${$(-d)} as a bank fee, then close ${inv.id}.`});return r}
+  if(d>0&&Math.abs(d-inv.amt*0.02)<1){Object.assign(r,{kind:"Overpayment",conf:84,post:true,why:`Paid ${$(d)} over ${inv.id}. That is exactly 2% of the invoice, which looks like a late fee the customer chose to pay.`,act:`Confirm a late fee was billed. If so, book ${$(d)} as fee income. If not, refund it.`});return r}
+  if(d<0&&t.memo.toLowerCase().includes("partial")){Object.assign(r,{kind:"Partial payment",conf:90,why:`The memo says “partial” and the payment is about half of ${inv.id}.`,act:`Apply ${$(t.amt)} and keep ${inv.id} open with a ${$(inv.amt-t.amt)} balance. Send a reminder.`});return r}
+  Object.assign(r,{kind:"Unclear",type:"human",conf:35,why:"The amount differs from the invoice and no known pattern explains it.",act:"Escalate to a human."});return r;
+});
+INV.filter(i=>!seen.has(i.id)).forEach(i=>R.push({t:{id:"none",payer:i.cust,amt:0,memo:"no payment"},inv:i,ev:null,post:false,kind:"Unpaid",conf:99,type:"exc",why:`No payment has arrived for ${i.id} (${$(i.amt)}).`,act:`Send a payment reminder to ${i.cust}.`}));
+let tab="exc";const state={},LOG=[];
+function render(){
+  const clear=R.filter(r=>r.type==="clear"),sug=R.filter(r=>r.type==="sug"),exc=R.filter(r=>r.type==="exc"||r.type==="human"),hum=R.filter(r=>r.type==="human");
+  document.getElementById("stats").innerHTML=[[R.length,"items reviewed"],[clear.length,"exact matches cleared"],[sug.length,"suggestions to confirm"],[exc.length,"exceptions"]].map(([a,b])=>`<div class="stat"><b>${a}</b><span>${b}</span></div>`).join("");
+  document.getElementById("bar").innerHTML=`<i style="width:${Math.round(clear.length/R.length*100)}%"></i>`;
+  const T=[["exc",`Exceptions (${exc.length})`],["sug",`Suggested (${sug.length})`],["human",`Needs a human (${hum.length})`],["clear",`Auto-cleared (${clear.length})`]];
+  document.getElementById("tabs").innerHTML=T.map(([k,l])=>`<button aria-pressed="${tab===k}" onclick="tab='${k}';render()">${l}</button>`).join("");
+  const rows=tab==="exc"?exc:tab==="sug"?sug:tab==="human"?hum:clear;
+  document.getElementById("list").innerHTML=rows.map(r=>{const k=R.indexOf(r),s=state[k];
+    const ev=r.ev?`<div class="ev">${r.ev.map(([l,ok])=>`<span class="${ok===true?"y":ok===false?"n":""}">${ok===true?"✓":ok===false?"✗":"–"} ${l}</span>`).join("")}</div>`:"";
+    const lab=r.type==="sug"?"Confirm match":r.post?"Approve and post":"Approve suggestion";
+    return `<div class="card ${r.type} ${s?"done":""}"><div class="top"><span><strong>${r.inv?r.inv.cust:r.t.payer}</strong><span class="kind">${r.kind}</span></span><span class="amt">${$(r.t.amt||r.inv.amt)}</span></div>
+<div class="meta">${r.t.id!=="none"?`${r.t.id} · memo “${r.t.memo}”`:"Open invoice"}${r.inv?` · ${r.inv.id} billed ${$(r.inv.amt)}`:""}</div>
+${ev}<div class="why">${r.why}</div>
+<div class="act"><b>Suggested action:</b> ${r.act}</div>
+${r.post?`<div class="post">This posts to the ledger, so it needs a person’s sign-off. The agent never does it alone.</div>`:""}
+<div class="conf"><span>Confidence ${r.conf}%</span><i><u style="width:${r.conf}%"></u></i>${r.conf<60?"<span><b>Not sure. A human should look at this.</b></span>":""}</div>
+${r.type==="clear"?"":s?`<div class="status">${s}</div>`:`<div class="btns"><button class="p" onclick="act(${k},'ok')">${lab}</button><button onclick="act(${k},'esc')">Escalate</button></div>`}</div>`}).join("");
+  document.getElementById("log").innerHTML=LOG.length?LOG.map(l=>`<div>${l}</div>`).join(""):"No decisions yet. Every confirm, approval or escalation is recorded here with a time.";
+}
+function act(k,mode){const r=R[k],nm=r.inv?r.inv.cust:r.t.payer;let m;
+  if(mode==="esc")m="Escalated to the controller.";else if(r.type==="sug")m="Match confirmed by you.";else if(r.post)m="Signed off by you. Entry posted.";else m="Approved by you.";
+  state[k]=m;LOG.push(`${new Date().toLocaleTimeString([],{hour:"numeric",minute:"2-digit",second:"2-digit"})} · ${m} ${nm}, ${r.kind.toLowerCase()}.`);render()}
+function reset(){for(const k in state)delete state[k];LOG.length=0;tab="exc";render()}
+render();
+</script>
+</body>
+</html>

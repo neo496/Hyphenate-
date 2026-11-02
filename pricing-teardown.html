@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pricing software that does the work</title>
+<style>
+:root{--bg:#f4f4f1;--sf:#fff;--ink:#17202a;--mu:#5d6772;--ln:#d8dbd6;--ac:#0f5c63;--bad:#b3261e;--ok:#1d7a4d;--warn:#a35a00;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101619;--sf:#182024;--ink:#e9eeee;--mu:#9aa6a9;--ln:#2b373b;--ac:#6cc4cc;--bad:#f2817a;--ok:#5fd09a;--warn:#f0b35a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#101619;--sf:#182024;--ink:#e9eeee;--mu:#9aa6a9;--ln:#2b373b;--ac:#6cc4cc;--bad:#f2817a;--ok:#5fd09a;--warn:#f0b35a;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 Georgia,"Iowan Old Style",serif}
+.w{max-width:780px;margin:0 auto;padding:30px 18px 64px}
+h1{font-size:34px;line-height:1.15;margin:0 0 10px}h2{font-size:22px;margin:38px 0 8px}
+p{margin:0 0 12px;max-width:66ch}.mu{color:var(--mu);font-size:14px}
+.sans,table,label,button,input{font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.box{overflow-x:auto;border:1px solid var(--ln);border-radius:6px;background:var(--sf);margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:560px}th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--ln);vertical-align:top}th{color:var(--mu);font-weight:600}tr:last-child td{border-bottom:0}
+.calc{background:var(--sf);border:1px solid var(--ln);border-radius:6px;padding:16px;margin:14px 0}
+.in{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+label{font-size:13px;color:var(--mu);display:block}label b{color:var(--ink);float:right;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--ac)}
+.res{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.r{border:1px solid var(--ln);border-radius:6px;padding:12px;font-family:system-ui,sans-serif}
+.r h3{margin:0 0 6px;font-size:15px}.r .big{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.r small{display:block;color:var(--mu);margin-top:4px;line-height:1.4}
+.pill{display:inline-block;font-size:12px;border-radius:4px;padding:2px 7px;margin-top:6px;border:1px solid currentColor}
+.good{color:var(--ok)}.badc{color:var(--bad)}.warnc{color:var(--warn)}
+.val{font-family:system-ui,sans-serif;font-size:14px;margin:14px 0 0;padding:10px 12px;background:var(--bg);border-radius:6px}
+a{color:var(--ac)}ul{padding-left:20px;max-width:66ch}li{margin-bottom:6px}
+@media(max-width:620px){.res{grid-template-columns:1fr}h1{font-size:28px}}
+</style>
+</head>
+<body><div class="w">
+<p class="mu sans">A working paper on one of Hyphenate’s open questions. Market figures are from third-party sources linked at the bottom. Calculator defaults are placeholders, not facts.</p>
+<h1>How do you price software that replaces work instead of tooling?</h1>
+<p><b>My answer:</b> charge per unit of finished work (a reconciled item, a closed account), with a floor and a ceiling. Seats punish the vendor for succeeding, and a percentage of money moved charges for dollars when the cost of the work is items. Finance buyers will accept this only if they can predict the bill and audit what they were charged for.</p>
+
+<h2>What the market charges today</h2>
+<div class="box"><table>
+<tr><th>Vendor</th><th>Model</th><th>Reported price</th><th>What it tells us</th></tr>
+<tr><td>BlackLine</td><td>Subscription, modules, implementation fee</td><td>About $77K a year on average, up to $340K (Vendr data, via Numeric)</td><td>Priced to company size. Price does not move when the work is automated.</td></tr>
+<tr><td>FloQast</td><td>Package scoped to entities and users; no public price</td><td>Sources disagree: roughly $12K–$23K baseline vs. from about $30K</td><td>Even the category leader hides its price, so buyers can’t benchmark.</td></tr>
+<tr><td>Intercom Fin (AI agent, support)</td><td>Per successful outcome, on top of seats</td><td>$0.99 per resolution, 50 per month minimum, billed once per conversation</td><td>The closest live proof that outcome pricing works for AI agents.</td></tr>
+</table></div>
+<p>The Fin case is useful because it shows both sides. Reviewers praise paying only for results, but G2 reviews flag bill unpredictability, and critics object to what counts as a “resolution.” <b>Lesson for finance:</b> an outcome-based price lives or dies on a definition of “outcome” the controller agrees with before signing.</p>
+
+<h2>Test it: three pricing models, one customer</h2>
+<p class="mu">Move the sliders to match a company. Everything below recomputes.</p>
+<div class="calc"><div class="in" id="in"></div>
+<div class="res" id="res"></div><div class="val" id="val"></div></div>
+
+<h2>Where each model breaks</h2>
+<ul>
+<li><b>Per seat.</b> The better the agent works, the fewer people the customer needs, so vendor revenue falls as customer value rises. It also prices tools for humans, not work done.</li>
+<li><b>Percent of volume (the 0.5% idea).</b> A $2M wire and a $200 invoice take the same effort to reconcile but pay the vendor 10,000 times apart. Try the average-item-size slider: the fee swings wildly while the work doesn’t. It also puts the vendor near money movement, which raises regulatory and trust questions a controller will ask first.</li>
+<li><b>Per finished item.</b> Cost tracks work, but bills spike with volume. Fix with a monthly cap and a minimum, and with a plain definition of “finished” that the audit log can prove.</li>
+</ul>
+<h2>What I’d test next</h2>
+<ul><li>Interview 5–10 controllers: would you accept a per-item price with a monthly cap? What do you need to see to believe an item is “done”?</li><li>Replace the placeholder defaults above with real volumes and minutes from a pilot customer.</li><li>Check whether exceptions humans must resolve should be free, discounted, or billed.</li></ul>
+
+<h2>Sources</h2>
+<ul class="mu sans" style="font-size:13px">
+<li><a href="https://www.helpdesk.com/blog/intercom-pricing/">helpdesk.com: Intercom pricing and Fin outcome fees</a></li>
+<li><a href="https://www.featurebase.app/blog/fin-ai-pricing">Featurebase: Fin pricing, 50-outcome minimum</a></li>
+<li><a href="https://insidea.com/software/intercom">insidea.com: G2 theme on pricing unpredictability</a></li>
+<li><a href="https://www.numeric.io/blog/blackline-pricing">Numeric: BlackLine pricing, citing Vendr</a></li>
+<li><a href="https://coefficient.io/month-end-close/blackline-vs-floqast">Coefficient: BlackLine vs. FloQast cost ranges</a></li>
+<li><a href="https://erpresearch.com/erp-add-ons/financial-close/floqast/pricing">ERPResearch: FloQast pricing</a></li>
+<li><a href="https://www.vendr.com/marketplace/floqast">Vendr: FloQast pricing structure</a></li>
+</ul>
+<p class="mu">Vendor prices are third-party estimates and may be out of date. Vendors did not confirm them.</p>
+</div>
+<script>
+const F=[["items","Items processed per month",200,20000,3000,200,v=>v.toLocaleString()],
+["size","Average item size ($)",100,100000,5000,100,v=>"$"+v.toLocaleString()],
+["min","Manual minutes per item",1,30,8,1,v=>v+" min"],
+["rate","Loaded cost per hour ($)",30,150,60,5,v=>"$"+v],
+["auto","Share the agent finishes alone",30,98,80,1,v=>v+"%"],
+["seats","Seats the customer would pay for",1,15,4,1,v=>v],
+["seatp","Price per seat per month ($)",200,3000,1200,50,v=>"$"+v.toLocaleString()],
+["unit","Price per finished item ($)",0.25,5,1,0.05,v=>"$"+v.toFixed(2)]];
+const S={};const $=n=>"$"+Math.round(n).toLocaleString();
+document.getElementById("in").innerHTML=F.map(([k,l,a,b,d,s,f])=>{S[k]=d;return `<div><label for="${k}">${l}<b id="o${k}">${f(d)}</b></label><input id="${k}" type="range" min="${a}" max="${b}" step="${s}" value="${d}"></div>`}).join("");
+F.forEach(([k,,,,,,f])=>document.getElementById(k).oninput=e=>{S[k]=+e.target.value;document.getElementById("o"+k).textContent=f(S[k]);run()});
+function run(){
+const done=S.items*S.auto/100,value=done*S.min/60*S.rate,vol=S.items*S.size;
+const M=[["Per seat",S.seats*S.seatp,"Flat. Does not change as the agent gets better."],["Per finished item",done*S.unit,`${Math.round(done).toLocaleString()} items at ${"$"+S.unit.toFixed(2)}.`],["0.5% of volume",vol*0.005,`On ${$(vol)} moved. Ignores how much work it was.`]];
+document.getElementById("res").innerHTML=M.map(([n,c,note])=>{const p=c/value*100;const [t,cl]=p>100?["Customer loses money","badc"]:p<3?["Vendor undercharges","warnc"]:p<=40?["Plausible","good"]:["Hard sell","warnc"];
+return `<div class="r"><h3>${n}</h3><div class="big">${$(c)}</div><small>${note}</small><small>${p.toFixed(0)}% of the value delivered</small><span class="pill ${cl}">${t}</span></div>`}).join("");
+document.getElementById("val").innerHTML=`Work the agent takes over: <b>${$(value)}</b> a month (${Math.round(done).toLocaleString()} items × ${S.min} min × ${$(S.rate)}/hr). A fair price usually captures a minority of that, so the buyer keeps most of the gain.`}
+run();
+</script></body></html>
